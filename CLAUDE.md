@@ -72,6 +72,13 @@ src/
 └── utils/
     ├── cn.ts               # clsx + tailwind-merge utility
     └── environment.ts      # Environment detection helpers
+
+supabase/
+├── migrations/             # Database migrations (versioned SQL files)
+│   ├── YYYYMMDDHHMMSS_create_rbac_schema.sql
+│   └── YYYYMMDDHHMMSS_create_custom_access_token_hook.sql
+├── config.toml             # Supabase CLI configuration
+└── seed.sql                # Seed data for local development
 ```
 
 ## Path Aliases
@@ -166,6 +173,89 @@ Configured in `next.config.ts`:
 - `poweredByHeader: false` - Hides Next.js signature
 - `compiler.removeConsole` - Removes console.log in production
 - Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy
+
+## Database Migrations
+
+All database schema changes **must** go through migrations. Never modify schema manually via SQL console.
+
+### Workflow
+
+```bash
+# Create a new migration
+pnpm supabase migration new nama_migration
+
+# Edit the generated file in supabase/migrations/
+
+# Reset database and apply all migrations + seed
+pnpm supabase db reset
+
+# Check current migration status
+pnpm supabase migration list
+
+# Generate migration from schema diff
+pnpm supabase db diff -f nama_migration
+```
+
+### Migration Rules
+
+- Use `IF NOT EXISTS` / `IF EXISTS` for idempotency (migrations run on db reset)
+- One migration per logical change (e.g., create table, add RLS, create function)
+- Name migrations descriptively: `create_profiles_table`, `add_categories_rls`
+- Always include RLS policies in the same migration as table creation
+- Seed data goes in `supabase/seed.sql`
+
+## RBAC Architecture
+
+This project implements Role-Based Access Control (RBAC) using Supabase custom claims.
+
+### How It Works
+
+1. **User Registration** → User signs up via Supabase Auth (stored in `auth.users`)
+2. **Role Assignment** → Super admin assigns roles via `public.user_roles` table
+3. **Login Hook** → `custom_access_token_hook` injects user roles into JWT claims
+4. **API Requests** → JWT contains `app_metadata.user_roles` array
+5. **RLS Enforcement** → Postgres RLS policies check `auth.jwt()->'app_metadata'->'user_roles'`
+
+### Roles
+
+| Role | Permissions |
+|------|-------------|
+| `super_admin` | Full access. Manage users, roles, categories. Can delete. |
+| `admin` | Manage categories (CRUD except delete). Read roles. |
+| `user` | Standard access. Cannot access categories. |
+
+### Adding a New Protected Table
+
+```sql
+-- 1. Create table
+CREATE TABLE public.my_table (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    name text NOT NULL,
+    created_at timestamptz DEFAULT now()
+);
+
+-- 2. Enable RLS
+ALTER TABLE public.my_table ENABLE ROW LEVEL SECURITY;
+
+-- 3. Create policies
+CREATE POLICY "Admins can view my_table"
+    ON public.my_table
+    FOR SELECT
+    USING (
+        (auth.jwt()->'app_metadata'->'user_roles') ?| array['super_admin', 'admin']
+    );
+
+-- 4. Grant permissions
+GRANT ALL ON public.my_table TO authenticated;
+```
+
+### Assigning Roles to Users
+
+```sql
+-- Via SQL (e.g., in seed or manually)
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('user-uuid-here', 'admin');
+```
 
 ## When Working on This Project
 
