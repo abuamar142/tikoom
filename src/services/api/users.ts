@@ -67,9 +67,19 @@ export async function updateUserRole(
     return { success: false, error: "Role tidak ditemukan" };
   }
 
+  // Delete existing roles for this user, then insert new role
+  const { error: deleteError } = await supabase
+    .from("user_roles")
+    .delete()
+    .eq("user_id", userId);
+
+  if (deleteError) {
+    return { success: false, error: deleteError.message };
+  }
+
   const { error } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role_id: role.id }, { onConflict: "user_id" });
+    .insert({ user_id: userId, role_id: role.id });
 
   if (error) {
     return { success: false, error: error.message };
