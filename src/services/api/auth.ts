@@ -23,6 +23,29 @@ export async function loginWithEmail(formData: FormData) {
   redirect("/dashboard");
 }
 
+export async function registerWithEmail(formData: FormData) {
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  const supabase = createServerSupabaseClient();
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/login");
+}
+
 export async function logout() {
   const supabase = createServerSupabaseClient();
   await supabase.auth.signOut();
