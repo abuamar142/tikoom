@@ -1,13 +1,13 @@
-import { Calendar, LayoutDashboard, Settings, Users } from "lucide-react";
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "Admin",
-};
+import { Calendar, LayoutDashboard, Settings, Tag, Users } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const SIDEBAR_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
   { icon: Calendar, label: "Events", href: "/admin/events" },
+  { icon: Tag, label: "Kategori", href: "/admin/categories" },
   { icon: Users, label: "Pengguna", href: "/admin/users" },
   { icon: Settings, label: "Pengaturan", href: "/admin/settings" },
 ];
@@ -17,6 +17,8 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <div className="min-h-screen bg-surface-50 flex">
       {/* Sidebar */}
@@ -34,16 +36,23 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
-          {SIDEBAR_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-50 transition-colors"
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          ))}
+          {SIDEBAR_ITEMS.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  isActive
+                    ? "text-primary-700 bg-primary-50"
+                    : "text-surface-600 hover:text-surface-900 hover:bg-surface-50"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-4 border-t border-surface-200">
