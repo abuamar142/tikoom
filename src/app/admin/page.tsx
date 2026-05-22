@@ -1,85 +1,71 @@
-"use client";
-
+import { requireAdmin } from "@/services/api/auth";
+import { getCategories } from "@/services/api/categories";
+import { createServerSupabaseClient } from "@/services/config/supabase-server";
 import { Card } from "@/components/atoms/Card/Card";
 import {
   Calendar,
   Users,
-  Ticket,
+  Tag,
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
 
-const STATS = [
-  {
-    icon: Calendar,
-    label: "Total Event",
-    value: "156",
-    change: "+12%",
-    trend: "up",
-    color: "text-primary-600",
-    bgColor: "bg-primary-50",
-  },
-  {
-    icon: Users,
-    label: "Pengguna",
-    value: "8,432",
-    change: "+8%",
-    trend: "up",
-    color: "text-secondary-600",
-    bgColor: "bg-secondary-50",
-  },
-  {
-    icon: Ticket,
-    label: "Tiket Terjual",
-    value: "24.5K",
-    change: "+23%",
-    trend: "up",
-    color: "text-accent-600",
-    bgColor: "bg-accent-50",
-  },
-  {
-    icon: TrendingUp,
-    label: "Pendapatan",
-    value: "Rp 1.2M",
-    change: "-2%",
-    trend: "down",
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
-  },
-];
+export const metadata = {
+  title: "Admin Dashboard",
+};
 
-const RECENT_EVENTS = [
-  {
-    id: "1",
-    title: "JavaScript Conference Indonesia 2025",
-    date: "15 Jun 2025",
-    status: "Aktif",
-    attendees: 1200,
-  },
-  {
-    id: "2",
-    title: "Jazz Festival Bandung",
-    date: "22 Jun 2025",
-    status: "Aktif",
-    attendees: 3500,
-  },
-  {
-    id: "3",
-    title: "Workshop UI/UX Design",
-    date: "28 Jun 2025",
-    status: "Draft",
-    attendees: 0,
-  },
-];
+export default async function AdminPage() {
+  await requireAdmin();
 
-const RECENT_USERS = [
-  { name: "Ahmad Rizki", email: "ahmad@email.com", date: "2 jam lalu" },
-  { name: "Budi Santoso", email: "budi@email.com", date: "5 jam lalu" },
-  { name: "Citra Dewi", email: "citra@email.com", date: "1 hari lalu" },
-];
+  const supabase = await createServerSupabaseClient();
 
-export default function AdminPage() {
+  // Get real counts from Supabase
+  const { count: userCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true });
+
+  const { data: categories } = await getCategories();
+
+  const stats = [
+    {
+      icon: Calendar,
+      label: "Total Event",
+      value: "0",
+      change: "+0%",
+      trend: "up" as const,
+      color: "text-primary-600",
+      bgColor: "bg-primary-50",
+    },
+    {
+      icon: Users,
+      label: "Pengguna",
+      value: userCount?.toString() || "0",
+      change: "+8%",
+      trend: "up" as const,
+      color: "text-secondary-600",
+      bgColor: "bg-secondary-50",
+    },
+    {
+      icon: Tag,
+      label: "Kategori",
+      value: categories?.length.toString() || "0",
+      change: "+12%",
+      trend: "up" as const,
+      color: "text-accent-600",
+      bgColor: "bg-accent-50",
+    },
+    {
+      icon: TrendingUp,
+      label: "Pendapatan",
+      value: "Rp 0",
+      change: "0%",
+      trend: "down" as const,
+      color: "text-rose-600",
+      bgColor: "bg-rose-50",
+    },
+  ];
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
       <div className="mb-8">
@@ -91,7 +77,7 @@ export default function AdminPage() {
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {STATS.map((stat) => (
+        {stats.map((stat) => (
           <Card key={stat.label} className="p-5">
             <div className="flex items-start justify-between">
               <div>
@@ -126,77 +112,62 @@ export default function AdminPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Events */}
+        {/* Categories Overview */}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-surface-900">
-              Event Terbaru
+              Kategori
             </h2>
-            <button className="text-sm font-medium text-primary-600 hover:text-primary-700">
-              Lihat Semua
-            </button>
+            <a href="/admin/categories" className="text-sm font-medium text-primary-600 hover:text-primary-700">
+              Kelola
+            </a>
           </div>
           <div className="space-y-3">
-            {RECENT_EVENTS.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-50 transition-colors"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 shrink-0">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-surface-900 truncate">
-                    {event.title}
-                  </p>
-                  <p className="text-xs text-surface-500">
-                    {event.date} · {event.attendees.toLocaleString()} peserta
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    event.status === "Aktif"
-                      ? "bg-success-50 text-success-700"
-                      : "bg-surface-100 text-surface-600"
-                  }`}
+            {categories && categories.length > 0 ? (
+              categories.slice(0, 5).map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-50 transition-colors"
                 >
-                  {event.status}
-                </span>
-              </div>
-            ))}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 shrink-0">
+                    <Tag className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-surface-900">
+                      {category.name}
+                    </p>
+                    <p className="text-xs text-surface-500 truncate">
+                      {category.description || "Tidak ada deskripsi"}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-surface-500 text-center py-4">
+                Belum ada kategori
+              </p>
+            )}
           </div>
         </Card>
 
-        {/* Recent Users */}
+        {/* Quick Actions */}
         <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-surface-900">
-              Pengguna Baru
-            </h2>
-            <button className="text-sm font-medium text-primary-600 hover:text-primary-700">
-              Lihat Semua
-            </button>
-          </div>
-          <div className="space-y-3">
-            {RECENT_USERS.map((user) => (
-              <div
-                key={user.email}
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-50 transition-colors"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-50 text-secondary-600 shrink-0">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-surface-900">
-                    {user.name}
-                  </p>
-                  <p className="text-xs text-surface-500 truncate">
-                    {user.email}
-                  </p>
-                </div>
-                <span className="text-xs text-surface-400">{user.date}</span>
+          <h2 className="text-lg font-bold text-surface-900 mb-4">
+            Aksi Cepat
+          </h2>
+          <div className="space-y-2">
+            <a
+              href="/admin/categories"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-50 transition-colors"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-50 text-accent-600">
+                <Tag className="h-5 w-5" />
               </div>
-            ))}
+              <div>
+                <p className="text-sm font-semibold text-surface-900">Kelola Kategori</p>
+                <p className="text-xs text-surface-500">Tambah, edit, hapus kategori</p>
+              </div>
+            </a>
           </div>
         </Card>
       </div>

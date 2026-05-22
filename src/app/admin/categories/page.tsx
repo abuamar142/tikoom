@@ -1,7 +1,5 @@
+import { requireAdmin } from "@/services/api/auth";
 import { getCategories } from "@/services/api/categories";
-import { Card } from "@/components/atoms/Card/Card";
-import { Button } from "@/components/atoms/Button/Button";
-import { Tag, Plus } from "lucide-react";
 import { CategoriesClient } from "./CategoriesClient";
 
 export const metadata = {
@@ -9,6 +7,7 @@ export const metadata = {
 };
 
 export default async function CategoriesPage() {
+  await requireAdmin();
   const { data: categories, error } = await getCategories();
 
   return (

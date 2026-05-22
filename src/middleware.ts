@@ -58,13 +58,25 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  const pathname = request.nextUrl.pathname;
+
+  // Admin login page: redirect authenticated users to /admin
+  if (pathname === "/admin/login" && session) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // Protect admin routes (except /admin/login)
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !session) {
+    return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
   // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !session) {
+  if (pathname.startsWith("/dashboard") && !session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Redirect authenticated users away from login/register
-  if ((request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/register") && session) {
+  if ((pathname === "/login" || pathname === "/register") && session) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

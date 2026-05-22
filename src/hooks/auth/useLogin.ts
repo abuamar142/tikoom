@@ -9,13 +9,17 @@ interface LoginFormData {
   password: string;
 }
 
+interface UseLoginOptions {
+  redirectTo?: string;
+}
+
 interface UseLoginReturn {
   login: (data: LoginFormData) => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
 
-export function useLogin(): UseLoginReturn {
+export function useLogin(options?: UseLoginOptions): UseLoginReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -36,7 +40,7 @@ export function useLogin(): UseLoginReturn {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(options?.redirectTo || "/dashboard");
       router.refresh();
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

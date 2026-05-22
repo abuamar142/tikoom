@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, LayoutDashboard, Settings, Tag, Users } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Settings, Tag, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,6 +18,15 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  // Don't render admin shell for login page
+  if (pathname === "/admin/login") {
+    return (
+      <div className="min-h-screen bg-surface-50">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-50 flex">
@@ -55,16 +64,21 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-surface-200">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-              <Users className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-surface-900">Admin</p>
-              <p className="text-xs text-surface-400">Super Admin</p>
-            </div>
-          </div>
+        <div className="p-4 border-t border-surface-200 space-y-2">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-50 transition-colors"
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            User Dashboard
+          </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-50 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            Keluar
+          </Link>
         </div>
       </aside>
 

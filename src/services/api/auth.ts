@@ -80,3 +80,35 @@ export async function getUser() {
 
   return user;
 }
+
+export async function getUserRole(): Promise<string | null> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  // Query user role from database
+  const { data: userRole } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id)
+    .single();
+
+  // @ts-expect-error - Supabase nested relation typing
+  return userRole?.roles?.name || null;
+}
+
+export async function requireAdmin() {
+  const role = await getUserRole();
+
+  if (!role || (role !== "admin" && role !== "super_admin")) {
+    redirect("/dashboard");
+  }
+
+  return role;
+}
