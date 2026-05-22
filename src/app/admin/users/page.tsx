@@ -1,0 +1,28 @@
+import { requireSuperAdmin } from "@/services/api/auth";
+import { getUsers } from "@/services/api/users";
+import { UsersClient } from "./UsersClient";
+
+export const metadata = {
+  title: "Kelola Pengguna",
+};
+
+export default async function UsersPage() {
+  await requireSuperAdmin();
+  const { data: users, error } = await getUsers();
+
+  return (
+    <div className="p-6 lg:p-8 w-full">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-surface-900">Kelola Pengguna</h1>
+        <p className="mt-1 text-surface-500">
+          Lihat dan kelola pengguna platform
+        </p>
+      </div>
+
+      <UsersClient
+        initialUsers={users || []}
+        initialError={error}
+      />
+    </div>
+  );
+}

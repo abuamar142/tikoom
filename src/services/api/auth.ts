@@ -112,3 +112,13 @@ export async function requireAdmin() {
 
   return role;
 }
+
+export async function requireSuperAdmin() {
+  const role = await getUserRole();
+
+  if (role !== "super_admin") {
+    redirect("/admin");
+  }
+
+  return role;
+}
