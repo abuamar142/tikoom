@@ -50,3 +50,9 @@ next-env.d.ts
 # IDE
 .idea
 .vscode
+
+# Claude / AI tools
+.claude/
+.agents/
+.mcp.json
+skills-lock.json
