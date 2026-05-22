@@ -277,6 +277,27 @@ INSERT INTO public.user_roles (user_id, role_id)
 SELECT 'user-uuid-here', id FROM public.roles WHERE name = 'admin';
 ```
 
+### Key Database Functions
+
+**`public.custom_access_token_hook(event jsonb)`**
+- Runs on every login/signup
+- Queries `user_roles` + `roles` to get user's role name
+- Injects `user_role` (text) into JWT claims
+- Located in: `supabase/migrations/*_update_hook_and_create_authorize.sql`
+
+**`public.authorize(requested_permission app_permission)`**
+- Centralized permission checker used in ALL RLS policies
+- Joins `role_permissions` + `roles` to verify if user's role has the permission
+- Returns `true`/`false`
+- Located in: `supabase/migrations/*_update_hook_and_create_authorize.sql`
+
+### Important Notes
+
+- **Role = Table** (flexible): Can add/remove/rename roles via SQL. Use `is_active` to soft-delete.
+- **Permission = Enum** (stable): Permission names rarely change. Add new values with `ALTER TYPE ... ADD VALUE`.
+- **Never** modify migrations that have already been committed and applied. Always create new migrations.
+- `supabase db reset` re-runs ALL migrations + seed. Use with caution on shared databases.
+
 ## When Working on This Project
 
 ### DO
