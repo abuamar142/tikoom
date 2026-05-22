@@ -76,7 +76,9 @@ src/
 supabase/
 ├── migrations/             # Database migrations (versioned SQL files)
 │   ├── YYYYMMDDHHMMSS_create_rbac_schema.sql
-│   └── YYYYMMDDHHMMSS_create_custom_access_token_hook.sql
+│   ├── YYYYMMDDHHMMSS_create_custom_access_token_hook.sql
+│   ├── YYYYMMDDHHMMSS_migrate_to_permission_rbac.sql
+│   └── YYYYMMDDHHMMSS_update_hook_and_create_authorize.sql
 ├── config.toml             # Supabase CLI configuration
 └── seed.sql                # Seed data for local development
 ```
@@ -204,48 +206,65 @@ pnpm supabase db diff -f nama_migration
 - Always include RLS policies in the same migration as table creation
 - Seed data goes in `supabase/seed.sql`
 
-## RBAC Architecture
+## RBAC Architecture (Permission-Based)
 
-This project implements Role-Based Access Control (RBAC) using Supabase custom claims.
+This project implements **granular permission-based RBAC** using Supabase custom claims.
+
+### Schema Overview
+
+| Object | Type | Purpose |
+|--------|------|---------|
+| `public.roles` | Table | Flexible role definitions (super_admin, admin, user) |
+| `public.app_permission` | Enum | Permission names: `categories.select`, `categories.insert`, etc. |
+| `public.role_permissions` | Table | Permission matrix — which roles have which permissions |
+| `public.user_roles` | Table | User-to-role assignments |
 
 ### How It Works
 
 1. **User Registration** → User signs up via Supabase Auth (stored in `auth.users`)
-2. **Role Assignment** → Super admin assigns roles via `public.user_roles` table
-3. **Login Hook** → `custom_access_token_hook` injects user roles into JWT claims
-4. **API Requests** → JWT contains `app_metadata.user_roles` array
-5. **RLS Enforcement** → Postgres RLS policies check `auth.jwt()->'app_metadata'->'user_roles'`
+2. **Role Assignment** → Admin assigns role via `public.user_roles` (links to `roles` table)
+3. **Role-Permission Mapping** → Defined in `public.role_permissions` table
+4. **Login Hook** → `custom_access_token_hook` injects single `user_role` (text) into JWT claims
+5. **API Requests** → JWT contains `user_role` claim
+6. **RLS Enforcement** → `authorize('permission.name')` checks role_permissions matrix
 
-### Roles
+### Default Roles & Permissions
 
 | Role | Permissions |
 |------|-------------|
-| `super_admin` | Full access. Manage users, roles, categories. Can delete. |
-| `admin` | Manage categories (CRUD except delete). Read roles. |
-| `user` | Standard access. Cannot access categories. |
+| `super_admin` | `categories.*`, `user_roles.manage` |
+| `admin` | `categories.select`, `categories.insert`, `categories.update` |
+| `user` | (no permissions) |
 
 ### Adding a New Protected Table
 
 ```sql
--- 1. Create table
+-- 1. Add permission to enum
+ALTER TYPE public.app_permission ADD VALUE 'my_table.select';
+
+-- 2. Grant permission to roles
+INSERT INTO public.role_permissions (role_id, permission)
+SELECT id, 'my_table.select'::public.app_permission
+FROM public.roles WHERE name IN ('super_admin', 'admin');
+
+-- 3. Create table
 CREATE TABLE public.my_table (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     name text NOT NULL,
     created_at timestamptz DEFAULT now()
 );
 
--- 2. Enable RLS
+-- 4. Enable RLS
 ALTER TABLE public.my_table ENABLE ROW LEVEL SECURITY;
 
--- 3. Create policies
-CREATE POLICY "Admins can view my_table"
+-- 5. Create policy using authorize()
+CREATE POLICY "Allow authorized select on my_table"
     ON public.my_table
     FOR SELECT
-    USING (
-        (auth.jwt()->'app_metadata'->'user_roles') ?| array['super_admin', 'admin']
-    );
+    TO authenticated
+    USING ((SELECT authorize('my_table.select')));
 
--- 4. Grant permissions
+-- 6. Grant table access
 GRANT ALL ON public.my_table TO authenticated;
 ```
 
@@ -253,8 +272,9 @@ GRANT ALL ON public.my_table TO authenticated;
 
 ```sql
 -- Via SQL (e.g., in seed or manually)
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('user-uuid-here', 'admin');
+-- First get the role_id
+INSERT INTO public.user_roles (user_id, role_id)
+SELECT 'user-uuid-here', id FROM public.roles WHERE name = 'admin';
 ```
 
 ## When Working on This Project
