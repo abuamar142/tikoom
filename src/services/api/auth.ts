@@ -10,13 +10,27 @@ export async function loginWithEmail(formData: FormData) {
 
   const supabase = await createServerSupabaseClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Check if user is active
+  if (data.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profile && profile.is_active === false) {
+      await supabase.auth.signOut();
+      return { error: "Akun Anda telah dinonaktifkan. Hubungi administrator." };
+    }
   }
 
   revalidatePath("/", "layout");
