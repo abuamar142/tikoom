@@ -11,7 +11,7 @@ export default async function CategoriesPage() {
   const { data: categories, error } = await getCategories();
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl">
+    <div className="p-6 lg:p-8 w-full">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-surface-900">Kategori</h1>
         <p className="mt-1 text-surface-500">

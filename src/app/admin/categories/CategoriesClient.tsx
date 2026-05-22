@@ -218,12 +218,12 @@ export function CategoriesClient({
                         {category.name}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-surface-500 line-clamp-2 max-w-xs">
+                    <td className="px-6 py-4 w-full">
+                      <p className="text-sm text-surface-500 line-clamp-2">
                         {category.description || "—"}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-surface-500">
                         {new Date(category.created_at).toLocaleDateString("id-ID", {
                           day: "numeric",
@@ -232,7 +232,7 @@ export function CategoriesClient({
                         })}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(category)}
