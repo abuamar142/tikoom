@@ -27,7 +27,7 @@ export function useRegister(): UseRegisterReturn {
 
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -40,7 +40,13 @@ export function useRegister(): UseRegisterReturn {
         return;
       }
 
-      router.push("/login");
+      // If session exists (auto-confirm/local dev), go to dashboard
+      // Otherwise, show verify-email page
+      if (signUpData.session) {
+        router.push("/dashboard");
+      } else {
+        router.push("/verify-email");
+      }
       router.refresh();
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

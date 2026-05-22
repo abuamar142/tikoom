@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerSupabaseClient } from "@/services/config/supabase";
+import { createServerSupabaseClient } from "@/services/config/supabase-server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -8,7 +8,7 @@ export async function loginWithEmail(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -28,7 +28,7 @@ export async function registerWithEmail(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -47,14 +47,14 @@ export async function registerWithEmail(formData: FormData) {
 }
 
 export async function logout() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/login");
 }
 
 export async function getSession() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
     error,
@@ -68,7 +68,7 @@ export async function getSession() {
 }
 
 export async function getUser() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
     error,
