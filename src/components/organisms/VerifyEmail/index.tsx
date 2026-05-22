@@ -7,15 +7,15 @@ export default function VerifyEmail() {
   return (
     <AuthLayout
       branding={{
-        tagline: "Secure Authentication",
-        headline: "Almost there",
+        tagline: "Verifikasi Akun",
+        headline: "Hampir Selesai",
         description:
-          "Just one more step to complete your registration and secure your account.",
+          "Satu langkah lagi untuk menyelesaikan pendaftaranmu dan mulai menjelajahi event menarik.",
         showStats: false,
       }}
       form={{
-        title: "Check your email",
-        subtitle: "We sent a verification link to your email address",
+        title: "Periksa emailmu",
+        subtitle: "Kami telah mengirim link verifikasi ke alamat emailmu",
       }}
     >
       <VerifyEmailContent />

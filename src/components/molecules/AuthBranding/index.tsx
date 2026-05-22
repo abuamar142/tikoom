@@ -23,13 +23,13 @@ export function AuthBranding({
     <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-900">
       <div className="absolute inset-0">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-400/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
-        <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-primary-500/15 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-500/15 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
+        <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-accent-500/10 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
       </div>
 
       <div className="relative z-10 flex flex-col justify-between h-full p-12 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-glow">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold">Tikoom</span>

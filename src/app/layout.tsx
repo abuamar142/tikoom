@@ -12,16 +12,26 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Tikoom - Modern Authentication",
+    default: "Tikoom - Temukan Event Seru di Sekitarmu",
     template: "%s | Tikoom",
   },
-  description: "A modern authentication system built with Next.js and Supabase",
-  keywords: ["authentication", "next.js", "supabase", "modern"],
+  description:
+    "Platform event discovery terbaik. Cari event menarik dari konser, workshop, festival, hingga seminar. Lihat lokasi di peta dan bagikan ke teman.",
+  keywords: [
+    "event",
+    "konser",
+    "workshop",
+    "festival",
+    "seminar",
+    "event discovery",
+    "tiket",
+    "indonesia",
+  ],
   authors: [{ name: "Tikoom" }],
   metadataBase: new URL("http://localhost:4000"),
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "id_ID",
     siteName: "Tikoom",
   },
   robots: {
@@ -36,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="id" className={inter.variable}>
       <body className="font-sans antialiased">
         {children}
         <ToastContainer

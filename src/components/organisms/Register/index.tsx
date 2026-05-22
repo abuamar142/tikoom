@@ -51,12 +51,12 @@ export default function Register() {
 
   const footer = (
     <>
-      Already have an account?{" "}
+      Sudah punya akun?{" "}
       <Link
         href="/login"
         className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
       >
-        Sign in
+        Masuk di sini
       </Link>
     </>
   );
@@ -64,14 +64,14 @@ export default function Register() {
   return (
     <AuthLayout
       branding={{
-        headline: "Join Tikoom today",
+        headline: "Jelajahi Event Bersama Tikoom",
         description:
-          "Experience the next generation of authentication with Tikoom. Built with security and user experience in mind.",
+          "Daftar gratis dan temukan ribuan event menarik. Dapatkan rekomendasi event yang sesuai minatmu.",
         showStats: true,
       }}
       form={{
-        title: "Create account",
-        subtitle: "Sign up to get started with Tikoom",
+        title: "Buat akun baru",
+        subtitle: "Daftar gratis untuk mulai menjelajahi event",
       }}
       footer={footer}
     >
@@ -86,7 +86,7 @@ export default function Register() {
             isLoading={isLoading}
             rightIcon={!isLoading && <ArrowRight size={18} />}
           >
-            Create Account
+            Daftar Gratis
           </Button>
         </form>
       </Card>

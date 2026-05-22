@@ -56,14 +56,14 @@ export default function Login() {
   return (
     <AuthLayout
       branding={{
-        headline: "Secure, fast, and simple",
+        headline: "Temukan Event Seru Setiap Hari",
         description:
-          "Experience the next generation of authentication with Tikoom. Built with security and user experience in mind.",
+          "Bergabung dengan ribuan orang yang menemukan event menarik melalui Tikoom. Dari konser hingga workshop, semua ada di sini.",
         showStats: true,
       }}
       form={{
-        title: "Welcome back",
-        subtitle: "Sign in to your account to continue",
+        title: "Selamat datang kembali",
+        subtitle: "Masuk ke akunmu untuk melanjutkan",
       }}
       footer={footer}
     >

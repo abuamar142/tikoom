@@ -3,8 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --background-rgb: 248, 250, 252;
+  --foreground-rgb: 28, 25, 23;
+  --background-rgb: 250, 250, 249;
+  --primary-rgb: 234, 88, 12;
+  --secondary-rgb: 13, 148, 136;
+  --accent-rgb: 245, 158, 11;
 }
 
 html {
@@ -16,6 +19,11 @@ body {
   background: rgb(var(--background-rgb));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.2);
+  color: inherit;
 }
 
 @layer base {
@@ -30,5 +38,24 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fb923c 100%);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #fff7ed 0%, #f0fdfa 50%, #fffbeb 100%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
