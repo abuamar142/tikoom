@@ -2,8 +2,11 @@ import { requireSuperAdmin } from "@/services/api/auth";
 import { getUsers } from "@/services/api/users";
 import { UsersClient } from "./UsersClient";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Kelola Pengguna",
+  description: "Kelola pengguna platform Tikoom. Lihat, ubah role, dan aktifkan/nonaktifkan pengguna.",
 };
 
 export default async function UsersPage() {

@@ -2,8 +2,11 @@ import { requireAdmin } from "@/services/api/auth";
 import { getCategories } from "@/services/api/categories";
 import { CategoriesClient } from "./CategoriesClient";
 
-export const metadata = {
-  title: "Kategori",
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Kelola Kategori",
+  description: "Kelola kategori event di platform Tikoom. Tambah, edit, dan hapus kategori.",
 };
 
 export default async function CategoriesPage() {

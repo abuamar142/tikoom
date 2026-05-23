@@ -11,8 +11,11 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Admin Dashboard",
+  description: "Panel administrasi Tikoom. Kelola kategori, pengguna, dan lihat statistik platform.",
 };
 
 export default async function AdminPage() {

@@ -1,14 +1,24 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { OrganizationJsonLd } from "@/components/atoms/JsonLd/JsonLd";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: true,
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#ea580c",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -28,16 +38,28 @@ export const metadata: Metadata = {
     "indonesia",
   ],
   authors: [{ name: "Tikoom" }],
-  metadataBase: new URL("http://localhost:4000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000"
+  ),
   openGraph: {
     type: "website",
     locale: "id_ID",
     siteName: "Tikoom",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tikoom - Temukan Event Seru di Sekitarmu",
+    description:
+      "Platform event discovery terbaik. Cari event menarik dari konser, workshop, festival, hingga seminar.",
+  },
   robots: {
     index: true,
     follow: true,
   },
+  alternates: {
+    canonical: "/",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -61,6 +83,9 @@ export default function RootLayout({
           pauseOnHover
           theme="light"
         />
+        <Analytics />
+        <SpeedInsights />
+        <OrganizationJsonLd />
       </body>
     </html>
   );
