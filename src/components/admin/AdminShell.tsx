@@ -20,11 +20,6 @@ const ALL_SIDEBAR_ITEMS = [
 export function AdminShell({ children, userRole }: AdminShellProps) {
   const pathname = usePathname();
 
-  // Don't render admin shell for login page
-  if (pathname === "/admin/login") {
-    return <div className="min-h-screen bg-surface-50">{children}</div>;
-  }
-
   const sidebarItems = ALL_SIDEBAR_ITEMS.filter(
     (item) => !item.adminOnly || userRole === "super_admin"
   );
