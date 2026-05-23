@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { OrganizationJsonLd } from "@/components/atoms/JsonLd/JsonLd";
+import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -70,7 +71,9 @@ export default function RootLayout({
   return (
     <html lang="id" className={inter.variable}>
       <body className="font-sans antialiased">
-        {children}
+        <ReactQueryProvider>
+          {children}
+        </ReactQueryProvider>
         <ToastContainer
           position="top-right"
           autoClose={5000}

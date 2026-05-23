@@ -10,12 +10,12 @@ import { Input } from "@/components/atoms/Input/Input";
 import { Modal } from "@/components/atoms/Modal/Modal";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog/ConfirmDialog";
 import {
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  type Category,
-  type CategoryFormData,
-} from "@/services/api/categories";
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/hooks/useCategories";
+import type { CategoryFormData } from "@/services/api/categories";
 import {
   Plus,
   Pencil,
@@ -27,7 +27,10 @@ import {
 import { toast } from "react-toastify";
 
 const categorySchema = yup.object({
-  name: yup.string().required("Nama kategori wajib diisi").min(2, "Minimal 2 karakter"),
+  name: yup
+    .string()
+    .required("Nama kategori wajib diisi")
+    .min(2, "Minimal 2 karakter"),
   description: yup.string().default(""),
 });
 
@@ -36,22 +39,21 @@ interface CategoryFormValues {
   description: string;
 }
 
-interface CategoriesClientProps {
-  initialCategories: Category[];
-  initialError: string | null;
-}
+export function CategoriesClient() {
+  const { data: categories = [], isLoading, error: queryError } = useCategories();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
 
-export function CategoriesClient({
-  initialCategories,
-  initialError,
-}: CategoriesClientProps) {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<
+    { id: string; name: string; description: string | null } | null
+  >(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
@@ -61,10 +63,7 @@ export function CategoriesClient({
     formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: yupResolver(categorySchema),
-    defaultValues: {
-      name: "",
-      description: "",
-    },
+    defaultValues: { name: "", description: "" },
   });
 
   const filteredCategories = categories.filter(
@@ -79,7 +78,11 @@ export function CategoriesClient({
     setIsModalOpen(true);
   };
 
-  const openEditModal = (category: Category) => {
+  const openEditModal = (category: {
+    id: string;
+    name: string;
+    description: string | null;
+  }) => {
     setEditingCategory(category);
     reset({
       name: category.name,
@@ -88,67 +91,70 @@ export function CategoriesClient({
     setIsModalOpen(true);
   };
 
-  const openDeleteConfirm = (category: Category) => {
+  const openDeleteConfirm = (category: { id: string; name: string }) => {
     setDeletingCategory(category);
     setIsConfirmOpen(true);
   };
 
   const onSubmit = async (data: CategoryFormValues) => {
-    setIsSubmitting(true);
-
     const formData: CategoryFormData = {
       name: data.name,
       description: data.description || "",
     };
 
     if (editingCategory) {
-      const { data: updated, error } = await updateCategory(editingCategory.id, formData);
-      if (error) {
-        toast.error(error);
-      } else if (updated) {
-        setCategories((prev) =>
-          prev.map((cat) => (cat.id === updated.id ? updated : cat))
-        );
-        toast.success("Kategori berhasil diperbarui");
-        setIsModalOpen(false);
-      }
+      updateCategory.mutate(
+        { id: editingCategory.id, formData },
+        {
+          onSuccess: () => {
+            toast.success("Kategori berhasil diperbarui");
+            setIsModalOpen(false);
+          },
+          onError: (err) => {
+            toast.error(err.message);
+          },
+        }
+      );
     } else {
-      const { data: created, error } = await createCategory(formData);
-      if (error) {
-        toast.error(error);
-      } else if (created) {
-        setCategories((prev) => [created, ...prev]);
-        toast.success("Kategori berhasil ditambahkan");
-        setIsModalOpen(false);
-      }
+      createCategory.mutate(formData, {
+        onSuccess: () => {
+          toast.success("Kategori berhasil ditambahkan");
+          setIsModalOpen(false);
+        },
+        onError: (err) => {
+          toast.error(err.message);
+        },
+      });
     }
-
-    setIsSubmitting(false);
   };
 
   const handleDelete = async () => {
     if (!deletingCategory) return;
 
-    setIsDeleting(true);
-    const { success, error } = await deleteCategory(deletingCategory.id);
-
-    if (error) {
-      toast.error(error);
-    } else if (success) {
-      setCategories((prev) => prev.filter((cat) => cat.id !== deletingCategory.id));
-      toast.success("Kategori berhasil dihapus");
-      setIsConfirmOpen(false);
-    }
-
-    setIsDeleting(false);
+    deleteCategory.mutate(deletingCategory.id, {
+      onSuccess: () => {
+        toast.success("Kategori berhasil dihapus");
+        setIsConfirmOpen(false);
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    });
   };
 
-  if (initialError) {
+  const isMutating =
+    createCategory.isPending ||
+    updateCategory.isPending ||
+    deleteCategory.isPending;
+
+  if (queryError) {
     return (
       <Card className="p-8 text-center">
         <AlertTriangle className="h-12 w-12 text-danger-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-surface-700">Gagal memuat kategori</h3>
-        <p className="mt-1 text-surface-500">{initialError}</p>
+        <h3 className="text-lg font-semibold text-surface-700">
+          Gagal memuat kategori
+        </h3>
+        <p className="mt-1 text-surface-500">{queryError.message}</p>
       </Card>
     );
   }
@@ -167,96 +173,112 @@ export function CategoriesClient({
             className="w-full rounded-xl border border-surface-200 bg-white pl-10 pr-4 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 transition-all"
           />
         </div>
-        <Button onClick={openCreateModal} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button
+          onClick={openCreateModal}
+          leftIcon={<Plus className="h-4 w-4" />}
+        >
           Tambah Kategori
         </Button>
       </div>
 
-      {/* Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-200 bg-surface-50/50">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Nama
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Deskripsi
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Dibuat
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-100">
-              {filteredCategories.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
-                    <Tag className="h-10 w-10 text-surface-300 mx-auto mb-3" />
-                    <p className="text-surface-500 font-medium">
-                      {searchQuery ? "Tidak ada kategori yang cocok" : "Belum ada kategori"}
-                    </p>
-                    <p className="text-sm text-surface-400 mt-1">
-                      {searchQuery
-                        ? "Coba kata kunci lain"
-                        : "Tambahkan kategori pertama"}
-                    </p>
-                  </td>
+      {isLoading ? (
+        <div className="animate-pulse space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 bg-surface-200 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        /* Table */
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-surface-200 bg-surface-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Nama
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Deskripsi
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Dibuat
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
                 </tr>
-              ) : (
-                filteredCategories.map((category) => (
-                  <tr
-                    key={category.id}
-                    className="hover:bg-surface-50/50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-surface-900">
-                        {category.name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 w-full">
-                      <p className="text-sm text-surface-500 line-clamp-2">
-                        {category.description || "—"}
+              </thead>
+              <tbody className="divide-y divide-surface-100">
+                {filteredCategories.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center">
+                      <Tag className="h-10 w-10 text-surface-300 mx-auto mb-3" />
+                      <p className="text-surface-500 font-medium">
+                        {searchQuery
+                          ? "Tidak ada kategori yang cocok"
+                          : "Belum ada kategori"}
+                      </p>
+                      <p className="text-sm text-surface-400 mt-1">
+                        {searchQuery
+                          ? "Coba kata kunci lain"
+                          : "Tambahkan kategori pertama"}
                       </p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-surface-500">
-                        {new Date(category.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(category)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => openDeleteConfirm(category)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-danger-600 hover:bg-danger-50 transition-colors"
-                          title="Hapus"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  filteredCategories.map((category) => (
+                    <tr
+                      key={category.id}
+                      className="hover:bg-surface-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-surface-900">
+                          {category.name}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 w-full">
+                        <p className="text-sm text-surface-500 line-clamp-2">
+                          {category.description || "—"}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-surface-500">
+                          {new Date(category.created_at).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(category)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteConfirm(category)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-danger-600 hover:bg-danger-50 transition-colors"
+                            title="Hapus"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Create/Edit Modal */}
       <Modal
@@ -292,14 +314,11 @@ export function CategoriesClient({
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
-              disabled={isSubmitting}
+              disabled={isMutating}
             >
               Batal
             </Button>
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" isLoading={isMutating}>
               {editingCategory ? "Simpan Perubahan" : "Tambah Kategori"}
             </Button>
           </div>
@@ -314,7 +333,7 @@ export function CategoriesClient({
         title="Hapus Kategori?"
         description={`Kategori "${deletingCategory?.name}" akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.`}
         confirmLabel="Hapus"
-        isLoading={isDeleting}
+        isLoading={deleteCategory.isPending}
       />
     </>
   );

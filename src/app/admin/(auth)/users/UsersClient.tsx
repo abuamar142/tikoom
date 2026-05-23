@@ -6,10 +6,10 @@ import { Card } from "@/components/atoms/Card/Card";
 import { Modal } from "@/components/atoms/Modal/Modal";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog/ConfirmDialog";
 import {
-  updateUserRole,
-  toggleUserStatus,
-  type UserWithRole,
-} from "@/services/api/users";
+  useUsers,
+  useUpdateUserRole,
+  useToggleUserStatus,
+} from "@/hooks/useUsers";
 import {
   Search,
   Users,
@@ -29,30 +29,37 @@ import { toast } from "react-toastify";
 const ROLES = [
   { value: "user", label: "User", color: "bg-surface-100 text-surface-700" },
   { value: "admin", label: "Admin", color: "bg-primary-50 text-primary-700" },
-  { value: "super_admin", label: "Super Admin", color: "bg-accent-50 text-accent-700" },
+  {
+    value: "super_admin",
+    label: "Super Admin",
+    color: "bg-accent-50 text-accent-700",
+  },
 ];
 
 const ITEMS_PER_PAGE = 10;
 
-interface UsersClientProps {
-  initialUsers: UserWithRole[];
-  initialError: string | null;
-}
+export function UsersClient() {
+  const { data: users = [], isLoading, error: queryError } = useUsers();
+  const updateUserRole = useUpdateUserRole();
+  const toggleUserStatus = useToggleUserStatus();
 
-export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
-  const [users, setUsers] = useState<UserWithRole[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [detailUser, setDetailUser] = useState<UserWithRole | null>(null);
+  const [detailUser, setDetailUser] = useState<
+    (typeof users)[number] | null
+  >(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const [editingUser, setEditingUser] = useState<
+    (typeof users)[number] | null
+  >(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [togglingUser, setTogglingUser] = useState<UserWithRole | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [togglingUser, setTogglingUser] = useState<
+    (typeof users)[number] | null
+  >(null);
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -74,71 +81,53 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const openDetail = (user: UserWithRole) => {
+  const openDetail = (user: (typeof users)[number]) => {
     setDetailUser(user);
     setIsDetailOpen(true);
   };
 
-  const openRoleModal = (user: UserWithRole) => {
+  const openRoleModal = (user: (typeof users)[number]) => {
     setEditingUser(user);
     setSelectedRole(user.role);
     setIsRoleModalOpen(true);
   };
 
-  const openToggleConfirm = (user: UserWithRole) => {
+  const openToggleConfirm = (user: (typeof users)[number]) => {
     setTogglingUser(user);
     setIsConfirmOpen(true);
   };
 
   const handleRoleChange = async () => {
     if (!editingUser) return;
-    setIsSubmitting(true);
 
-    const { success, error } = await updateUserRole(
-      editingUser.id,
-      selectedRole
+    updateUserRole.mutate(
+      { userId: editingUser.id, roleName: selectedRole },
+      {
+        onSuccess: () => {
+          toast.success("Role pengguna berhasil diperbarui");
+          setIsRoleModalOpen(false);
+        },
+        onError: (err) => toast.error(err.message),
+      }
     );
-
-    if (error) {
-      toast.error(error);
-    } else if (success) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === editingUser.id ? { ...u, role: selectedRole } : u
-        )
-      );
-      toast.success("Role pengguna berhasil diperbarui");
-      setIsRoleModalOpen(false);
-    }
-
-    setIsSubmitting(false);
   };
 
   const handleToggleStatus = async () => {
     if (!togglingUser) return;
-    setIsSubmitting(true);
 
     const newStatus = !togglingUser.is_active;
-    const { success, error } = await toggleUserStatus(
-      togglingUser.id,
-      newStatus
+    toggleUserStatus.mutate(
+      { userId: togglingUser.id, isActive: newStatus },
+      {
+        onSuccess: () => {
+          toast.success(
+            `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`
+          );
+          setIsConfirmOpen(false);
+        },
+        onError: (err) => toast.error(err.message),
+      }
     );
-
-    if (error) {
-      toast.error(error);
-    } else if (success) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === togglingUser.id ? { ...u, is_active: newStatus } : u
-        )
-      );
-      toast.success(
-        `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`
-      );
-      setIsConfirmOpen(false);
-    }
-
-    setIsSubmitting(false);
   };
 
   const getRoleBadge = (role: string) => {
@@ -152,14 +141,14 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
     );
   };
 
-  if (initialError) {
+  if (queryError) {
     return (
       <Card className="p-8 text-center">
         <AlertTriangle className="h-12 w-12 text-danger-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-surface-700">
           Gagal memuat pengguna
         </h3>
-        <p className="mt-1 text-surface-500">{initialError}</p>
+        <p className="mt-1 text-surface-500">{queryError.message}</p>
       </Card>
     );
   }
@@ -206,9 +195,7 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-surface-900">
-                  {stat.value}
-                </p>
+                <p className="text-2xl font-bold text-surface-900">{stat.value}</p>
                 <p className="text-xs text-surface-500">{stat.label}</p>
               </div>
             </div>
@@ -261,149 +248,157 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
       </div>
 
       {/* Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-200 bg-surface-50/50">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Pengguna
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
-                  Bergabung
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-surface-500 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-100">
-              {paginatedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <Users className="h-10 w-10 text-surface-300 mx-auto mb-3" />
-                    <p className="text-surface-500 font-medium">
-                      Tidak ada pengguna
-                    </p>
-                  </td>
+      {isLoading ? (
+        <div className="animate-pulse space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 bg-surface-200 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-surface-200 bg-surface-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Pengguna
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-surface-500 uppercase tracking-wider whitespace-nowrap">
+                    Bergabung
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
                 </tr>
-              ) : (
-                paginatedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-surface-50/50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold text-sm">
-                          {user.name?.charAt(0).toUpperCase() ||
-                            user.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-surface-900">
-                            {user.name || "—"}
-                          </p>
-                          <p className="text-sm text-surface-500">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => openToggleConfirm(user)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                          user.is_active
-                            ? "bg-success-50 text-success-700 hover:bg-success-100"
-                            : "bg-danger-50 text-danger-700 hover:bg-danger-100"
-                        }`}
-                      >
-                        {user.is_active ? (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Aktif
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-3.5 w-3.5" />
-                            Nonaktif
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-surface-500">
-                        {new Date(user.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openDetail(user)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                          title="Detail"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => openRoleModal(user)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-secondary-600 hover:bg-secondary-50 transition-colors"
-                          title="Ganti Role"
-                        >
-                          <Shield className="h-4 w-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-surface-100">
+                {paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <Users className="h-10 w-10 text-surface-300 mx-auto mb-3" />
+                      <p className="text-surface-500 font-medium">
+                        Tidak ada pengguna
+                      </p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-surface-100">
-            <p className="text-sm text-surface-500">
-              Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-              {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)}{" "}
-              dari {filteredUsers.length} pengguna
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-sm text-surface-600">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+                ) : (
+                  paginatedUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover:bg-surface-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold text-sm">
+                            {user.name?.charAt(0).toUpperCase() ||
+                              user.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-surface-900">
+                              {user.name || "—"}
+                            </p>
+                            <p className="text-sm text-surface-500">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => openToggleConfirm(user)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                            user.is_active
+                              ? "bg-success-50 text-success-700 hover:bg-success-100"
+                              : "bg-danger-50 text-danger-700 hover:bg-danger-100"
+                          }`}
+                        >
+                          {user.is_active ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Aktif
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="h-3.5 w-3.5" />
+                              Nonaktif
+                            </>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-surface-500">
+                          {new Date(user.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openDetail(user)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                            title="Detail"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openRoleModal(user)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 hover:text-secondary-600 hover:bg-secondary-50 transition-colors"
+                            title="Ganti Role"
+                          >
+                            <Shield className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </Card>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-surface-100">
+              <p className="text-sm text-surface-500">
+                Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)}{" "}
+                dari {filteredUsers.length} pengguna
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm text-surface-600">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-200 text-surface-600 hover:bg-surface-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Detail Modal */}
       <Modal
@@ -422,9 +417,7 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
                 <p className="text-lg font-semibold text-surface-900">
                   {detailUser.name || "—"}
                 </p>
-                <p className="text-sm text-surface-500">
-                  {detailUser.email}
-                </p>
+                <p className="text-sm text-surface-500">{detailUser.email}</p>
               </div>
             </div>
             <div className="space-y-3 pt-2">
@@ -524,11 +517,14 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
             <Button
               variant="outline"
               onClick={() => setIsRoleModalOpen(false)}
-              disabled={isSubmitting}
+              disabled={updateUserRole.isPending}
             >
               Batal
             </Button>
-            <Button onClick={handleRoleChange} isLoading={isSubmitting}>
+            <Button
+              onClick={handleRoleChange}
+              isLoading={updateUserRole.isPending}
+            >
               Simpan
             </Button>
           </div>
@@ -547,7 +543,7 @@ export function UsersClient({ initialUsers, initialError }: UsersClientProps) {
             : `Pengguna "${togglingUser?.name || togglingUser?.email}" akan diaktifkan kembali.`
         }
         confirmLabel={togglingUser?.is_active ? "Nonaktifkan" : "Aktifkan"}
-        isLoading={isSubmitting}
+        isLoading={toggleUserStatus.isPending}
       />
     </>
   );

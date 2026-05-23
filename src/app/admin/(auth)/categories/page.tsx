@@ -1,5 +1,4 @@
 import { requireAdmin } from "@/services/api/auth";
-import { getCategories } from "@/services/api/categories";
 import { CategoriesClient } from "./CategoriesClient";
 
 import type { Metadata } from "next";
@@ -11,7 +10,6 @@ export const metadata: Metadata = {
 
 export default async function CategoriesPage() {
   await requireAdmin();
-  const { data: categories, error } = await getCategories();
 
   return (
     <div className="p-6 lg:p-8 w-full">
@@ -22,10 +20,7 @@ export default async function CategoriesPage() {
         </p>
       </div>
 
-      <CategoriesClient
-        initialCategories={categories || []}
-        initialError={error}
-      />
+      <CategoriesClient />
     </div>
   );
 }

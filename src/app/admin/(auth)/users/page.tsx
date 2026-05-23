@@ -1,5 +1,4 @@
 import { requireSuperAdmin } from "@/services/api/auth";
-import { getUsers } from "@/services/api/users";
 import { UsersClient } from "./UsersClient";
 
 import type { Metadata } from "next";
@@ -11,7 +10,6 @@ export const metadata: Metadata = {
 
 export default async function UsersPage() {
   await requireSuperAdmin();
-  const { data: users, error } = await getUsers();
 
   return (
     <div className="p-6 lg:p-8 w-full">
@@ -22,10 +20,7 @@ export default async function UsersPage() {
         </p>
       </div>
 
-      <UsersClient
-        initialUsers={users || []}
-        initialError={error}
-      />
+      <UsersClient />
     </div>
   );
 }
