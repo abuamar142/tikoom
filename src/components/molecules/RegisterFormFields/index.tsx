@@ -28,7 +28,7 @@ export function RegisterFormFields({
         type="text"
         placeholder="John Doe"
         leftIcon={<User className="w-[18px] h-[18px]" />}
-        error={errors.name?.message}
+        error={errors.name?.message ?? ""}
         {...register("name")}
       />
 
@@ -37,7 +37,7 @@ export function RegisterFormFields({
         type="email"
         placeholder="you@example.com"
         leftIcon={<Mail className="w-[18px] h-[18px]" />}
-        error={errors.email?.message}
+        error={errors.email?.message ?? ""}
         {...register("email")}
       />
 
@@ -46,7 +46,7 @@ export function RegisterFormFields({
         type="password"
         placeholder="Create a password"
         leftIcon={<Lock className="w-[18px] h-[18px]" />}
-        error={errors.password?.message}
+        error={errors.password?.message ?? ""}
         {...register("password")}
       />
 
@@ -55,7 +55,7 @@ export function RegisterFormFields({
         type="password"
         placeholder="Confirm your password"
         leftIcon={<Lock className="w-[18px] h-[18px]" />}
-        error={errors.confirmPassword?.message}
+        error={errors.confirmPassword?.message ?? ""}
         {...register("confirmPassword")}
       />
     </div>

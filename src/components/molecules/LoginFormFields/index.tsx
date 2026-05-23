@@ -12,29 +12,29 @@ export function LoginFormFields({ register, errors }: LoginFormFieldsProps) {
   return (
     <div className="space-y-4">
       <Input
-        label="Email Address"
+        label="Alamat Email"
         type="email"
-        placeholder="you@example.com"
+        placeholder="anda@contoh.com"
         leftIcon={<Mail className="w-[18px] h-[18px]" />}
-        error={errors.email?.message}
+        error={errors.email?.message ?? ""}
         {...register("email")}
       />
 
       <div className="space-y-1">
         <Input
-          label="Password"
+          label="Kata Sandi"
           type="password"
-          placeholder="Enter your password"
+          placeholder="Masukkan kata sandi"
           leftIcon={<Lock className="w-[18px] h-[18px]" />}
-          error={errors.password?.message}
+          error={errors.password?.message ?? ""}
           {...register("password")}
         />
         <div className="flex justify-end">
           <Link
-            href="#"
+            href="/forgot-password"
             className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
           >
-            Forgot password?
+            Lupa kata sandi?
           </Link>
         </div>
       </div>

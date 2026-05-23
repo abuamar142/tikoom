@@ -273,7 +273,7 @@ export function CategoriesClient({
           <Input
             label="Nama Kategori"
             placeholder="Contoh: Musik, Teknologi, Olahraga"
-            error={errors.name?.message}
+            error={errors.name?.message ?? ""}
             {...register("name")}
           />
           <div>

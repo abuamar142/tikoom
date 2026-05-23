@@ -28,59 +28,35 @@ const QUICK_STATS = [
   {
     icon: Calendar,
     label: "Event Diikuti",
-    value: "3",
+    value: "0",
     color: "text-primary-600",
     bgColor: "bg-primary-50",
   },
   {
     icon: Heart,
     label: "Disimpan",
-    value: "12",
+    value: "0",
     color: "text-rose-600",
     bgColor: "bg-rose-50",
   },
   {
     icon: Ticket,
     label: "Tiket Aktif",
-    value: "2",
+    value: "0",
     color: "text-secondary-600",
     bgColor: "bg-secondary-50",
   },
   {
     icon: Bell,
     label: "Notifikasi",
-    value: "5",
+    value: "0",
     color: "text-accent-600",
     bgColor: "bg-accent-50",
   },
 ];
 
-const SAVED_EVENTS = [
-  {
-    id: "s1",
-    title: "JavaScript Conference Indonesia 2025",
-    description: "Konferensi tahunan untuk developer JavaScript.",
-    date: "15 Juni 2025",
-    time: "09:00 - 17:00",
-    location: "Jakarta Convention Center",
-    category: "Teknologi",
-    image: "",
-    attendees: 1200,
-    price: "Rp 500K",
-  },
-  {
-    id: "s2",
-    title: "Jazz Festival Bandung",
-    description: "Penampilan musisi jazz lokal dan internasional.",
-    date: "22 Juni 2025",
-    time: "18:00 - 23:00",
-    location: "Lapangan Dago, Bandung",
-    category: "Musik",
-    image: "",
-    attendees: 3500,
-    price: "Gratis",
-  },
-];
+// TODO: Ganti dengan data dari API saat fitur event tersedia
+const SAVED_EVENTS: typeof EventCard.prototype.event[] = [];
 
 export default function Dashboard({ user }: DashboardProps) {
   return (

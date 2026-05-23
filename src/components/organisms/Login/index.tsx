@@ -43,12 +43,12 @@ export default function Login() {
 
   const footer = (
     <>
-      Don&apos;t have an account?{" "}
+      Belum punya akun?{" "}
       <Link
         href="/register"
         className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
       >
-        Create one now
+        Buat akun sekarang
       </Link>
     </>
   );
@@ -78,7 +78,7 @@ export default function Login() {
             isLoading={isLoading}
             rightIcon={!isLoading && <ArrowRight size={18} />}
           >
-            Sign In
+            Masuk
           </Button>
         </form>
         <SocialAuthButtons />
