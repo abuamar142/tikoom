@@ -6,33 +6,44 @@ A modern authentication system built with Next.js 15, TypeScript, Tailwind CSS, 
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Next.js | 15.0.0 (App Router) | React framework |
+| Next.js | 15.5.x (App Router) | React framework |
 | React | 19 | UI library |
-| TypeScript | 5.x | Type safety |
+| React Compiler | Experimental | Auto-memoization |
+| TypeScript | 6.x | Type safety |
 | Tailwind CSS | 3.4.x | Utility-first styling |
 | pnpm | 10.33.4 | Package manager |
 | Node.js | 22.x | Runtime |
 | Supabase | latest | Backend/auth |
+| TanStack Query | 5.x | Server state caching |
 | React Hook Form | 7.x | Form handling |
 | Yup | 1.x | Form validation |
 | Lucide React | latest | Icons |
+| Vitest | 4.x | Unit testing |
+| @vercel/analytics | latest | Web analytics |
+| @vercel/speed-insights | latest | Performance monitoring |
 
 ## Architecture Patterns
 
 ### Atomic Design Methodology
 Components are organized using Atomic Design principles:
-- **atoms/** - Basic building blocks (Button, Input, Card, Spinner)
-- **molecules/** - Composite components (not yet implemented)
-- **organisms/** - Complex UI sections (not yet implemented)
+- **atoms/** - Basic building blocks (Button, Input, Card, Spinner, Badge, Modal, JsonLd)
+- **molecules/** - Composite components (AuthLayout, LoginFormFields, RegisterFormFields, EventCard, ConfirmDialog, DashboardHeader, SocialAuthButtons)
+- **organisms/** - Complex UI sections (Dashboard, Footer, Navbar, LandingHero, LandingCategories, LandingEvents, Login, Register)
+
+### Route Groups (Next.js App Router)
+- **(auth)/** - Public authentication pages (login, register, forgot-password, reset-password, verify-email)
+- **(public)/** - Public landing pages
+- **admin/(public)/** - Public admin login
+- **admin/(auth)/** - Protected admin routes (dashboard, categories, users)
 
 ### Separation of Concerns
 - **UI Layer**: `src/components/` - Dumb, reusable components
-- **Business Logic**: `src/hooks/` - Custom hooks per feature
+- **Business Logic**: `src/hooks/` - Custom hooks per feature (TanStack Query hooks)
 - **Data Layer**: `src/services/` - API calls and config
 - **Types**: `src/interfaces/` + `src/types/` - Type definitions
 
 ### State Management Strategy
-- **Server State**: TanStack React Query (planned) / Supabase realtime
+- **Server State**: TanStack React Query (active) - Caching, background refetch, mutations
 - **Client State**: React Hook Form for forms
 - **Auth State**: Supabase Auth + middleware session validation
 
@@ -40,47 +51,100 @@ Components are organized using Atomic Design principles:
 
 ```
 src/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx          # Root layout + metadata + ToastContainer
-│   ├── loading.tsx         # Global loading UI
-│   ├── not-found.tsx       # 404 page
-│   ├── page.tsx            # Redirects to /login
-│   ├── login/
-│   │   ├── layout.tsx      # Login metadata (Server Component)
-│   │   └── page.tsx        # Login form (Client Component)
-│   └── dashboard/
-│       └── page.tsx        # Protected dashboard (Server Component)
+├── app/                          # Next.js App Router
+│   ├── layout.tsx                # Root layout + metadata + providers
+│   ├── loading.tsx               # Global loading UI
+│   ├── not-found.tsx             # 404 page
+│   ├── error.tsx                 # Root error boundary
+│   ├── global-error.tsx          # Global error boundary
+│   ├── page.tsx                  # Redirects to /login
+│   ├── (auth)/                   # Public auth routes
+│   │   ├── login/
+│   │   ├── register/
+│   │   ├── forgot-password/
+│   │   ├── reset-password/
+│   │   └── verify-email/
+│   ├── (public)/                 # Public landing routes
+│   ├── dashboard/                # Protected user dashboard
+│   ├── admin/
+│   │   ├── (public)/             # Public admin login
+│   │   │   └── login/
+│   │   └── (auth)/               # Protected admin routes
+│   │       ├── page.tsx          # Admin dashboard
+│   │       ├── categories/
+│   │       ├── users/
+│   │       ├── layout.tsx        # Auth check + AdminShell
+│   │       ├── loading.tsx
+│   │       └── error.tsx
+│   ├── robots.ts                 # robots.txt generation
+│   ├── sitemap.ts                # sitemap.xml generation
+│   ├── manifest.ts               # PWA manifest
+│   ├── opengraph-image.tsx       # Dynamic OG image
+│   └── twitter-image.tsx         # Dynamic Twitter image
 ├── components/
-│   └── atoms/
-│       ├── Button/         # Variant system: primary/secondary/outline/ghost/danger
-│       ├── Card/           # Variants: default/glass/elevated
-│       ├── Input/          # With label, error, leftIcon, password toggle
-│       └── Spinner/        # Size variants: xs/sm/md/lg/xl
+│   ├── admin/
+│   │   └── AdminShell.tsx
+│   ├── atoms/
+│   │   ├── Badge/
+│   │   ├── Button/
+│   │   ├── Card/
+│   │   ├── Input/
+│   │   ├── JsonLd/
+│   │   ├── Modal/
+│   │   └── Spinner/
+│   ├── molecules/
+│   │   ├── AuthBranding/
+│   │   ├── AuthErrorAlert/
+│   │   ├── AuthFormContainer/
+│   │   ├── AuthLayout/
+│   │   ├── ConfirmDialog/
+│   │   ├── DashboardHeader/
+│   │   ├── EventCard/
+│   │   ├── LoginFormFields/
+│   │   ├── ProfileCard/
+│   │   ├── RegisterFormFields/
+│   │   ├── SectionHeader/
+│   │   ├── SecurityCard/
+│   │   ├── SocialAuthButtons/
+│   │   └── VerifyEmailContent/
+│   ├── organisms/
+│   │   ├── Dashboard/
+│   │   ├── Footer/
+│   │   ├── LandingCategories/
+│   │   ├── LandingEvents/
+│   │   ├── LandingHero/
+│   │   ├── LandingHowItWorks/
+│   │   ├── LandingSearch/
+│   │   ├── Login/
+│   │   ├── Navbar/
+│   │   ├── Register/
+│   │   └── VerifyEmail/
+│   └── providers/
+│       └── ReactQueryProvider.tsx
 ├── hooks/
-│   └── auth/
-│       ├── useAuth.ts      # Auth state + onAuthStateChange listener
-│       └── useLogin.ts     # Login mutation with loading/error states
+│   ├── auth/
+│   │   ├── useAuth.ts
+│   │   └── useLogin.ts
+│   ├── useCategories.ts          # TanStack Query hooks
+│   └── useUsers.ts
 ├── interfaces/
-│   └── auth.ts             # LoginCredentials, User, AuthState
+│   └── auth.ts
+├── lib/
+│   └── query-keys.ts             # Centralized TanStack Query keys
 ├── services/
 │   ├── api/
-│   │   └── auth.ts         # Server Actions: login, logout, getSession, getUser
+│   │   ├── auth.ts               # Server Actions: login, logout, getUser, getUserRole
+│   │   ├── categories.ts         # Server Actions: CRUD categories
+│   │   └── users.ts              # Server Actions: getUsers, updateUserRole, toggleUserStatus
 │   └── config/
-│       └── supabase.ts     # Browser & Server client factories
+│       ├── supabase.ts           # Browser client (with PKCE config)
+│       ├── supabase-server.ts    # Server client (getAll/setAll cookies)
+│       └── supabase-service.ts   # Service role client
 ├── types/
-│   └── global.d.ts         # CSS/SCSS module declarations
+│   └── global.d.ts
 └── utils/
-    ├── cn.ts               # clsx + tailwind-merge utility
-    └── environment.ts      # Environment detection helpers
-
-supabase/
-├── migrations/             # Database migrations (versioned SQL files)
-│   ├── YYYYMMDDHHMMSS_create_rbac_schema.sql
-│   ├── YYYYMMDDHHMMSS_create_custom_access_token_hook.sql
-│   ├── YYYYMMDDHHMMSS_migrate_to_permission_rbac.sql
-│   └── YYYYMMDDHHMMSS_update_hook_and_create_authorize.sql
-├── config.toml             # Supabase CLI configuration
-└── seed.sql                # Seed data for local development
+    ├── cn.ts
+    └── environment.ts
 ```
 
 ## Path Aliases
@@ -98,6 +162,7 @@ Configured in `tsconfig.json`:
 | `@store/*` | `./src/store/*` |
 | `@types/*` | `./src/types/*` |
 | `@utils/*` | `./src/utils/*` |
+| `@lib/*` | `./src/lib/*` |
 
 ## Code Conventions
 
@@ -123,15 +188,41 @@ const schema = yup.object({
 // Located in src/services/api/auth.ts
 ```
 
+### TanStack Query Pattern
+```tsx
+// Custom hook for data fetching
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.categories,
+    queryFn: async () => {
+      const { data, error } = await getCategories();
+      if (error) throw new Error(error);
+      return data ?? [];
+    },
+  });
+}
+
+// Custom hook for mutations
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+    },
+  });
+}
+```
+
 ### Metadata Pattern
 - **Never** export `metadata` from a `"use client"` file
 - Use separate `layout.tsx` for page-specific metadata
 - Root metadata uses template: `"%s | Tikoom"`
 
 ### Auth Pattern
-- **Browser**: `createBrowserSupabaseClient()` for client-side auth
+- **Browser**: `createBrowserSupabaseClient()` for client-side auth (PKCE flow)
 - **Server**: `createServerSupabaseClient()` for Server Components/Actions
-- **Middleware**: `@supabase/ssr` cookie-based session validation
+- **Middleware**: `@supabase/ssr` cookie-based session validation with `getUser()`
 - Protected routes redirect to `/login`, authenticated users redirected from `/login` to `/dashboard`
 
 ## Environment Variables
@@ -143,6 +234,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Optional (defaults to development)
 NEXT_PUBLIC_APP_ENV=development|staging|production
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
 ## Commands
@@ -161,12 +253,16 @@ pnpm dev          # http://localhost:4000
 pnpm build
 pnpm start
 
+# Testing
+pnpm test         # Run Vitest
+pnpm coverage     # Run tests with coverage
+pnpm analyze      # Bundle analysis
+
 # Linting
 pnpm lint
 
-# Docker
-docker build -t tikoom .
-docker run -p 8080:8080 tikoom
+# Pre-commit
+# Husky + lint-staged automatically runs on commit
 ```
 
 ## Security Configuration
@@ -174,7 +270,21 @@ docker run -p 8080:8080 tikoom
 Configured in `next.config.ts`:
 - `poweredByHeader: false` - Hides Next.js signature
 - `compiler.removeConsole` - Removes console.log in production
-- Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy
+- **Content Security Policy (CSP)** - Strict CSP with nonce support
+- **Strict-Transport-Security (HSTS)** - `max-age=63072000; includeSubDomains; preload`
+- **X-Frame-Options: DENY** - Clickjacking protection
+- **Permissions-Policy** - Restricts camera, microphone, geolocation
+- **Referrer-Policy: strict-origin-when-cross-origin**
+
+## SEO Configuration
+
+- **Dynamic OG Images**: `opengraph-image.tsx` + `twitter-image.tsx` (1200x630)
+- **PWA Manifest**: `manifest.ts` with icons, theme color
+- **Structured Data**: JSON-LD Organization + WebSite schemas
+- **Vercel Analytics**: `@vercel/analytics` + `@vercel/speed-insights`
+- **Metadata**: Complete metadata on all pages (title, description, OpenGraph, Twitter Cards)
+- **Sitemap**: Dynamic sitemap.ts with all routes
+- **Robots.txt**: Configured via `robots.ts`
 
 ## Database Migrations
 
@@ -224,9 +334,9 @@ This project implements **granular permission-based RBAC** using Supabase custom
 1. **User Registration** → User signs up via Supabase Auth (stored in `auth.users`)
 2. **Role Assignment** → Admin assigns role via `public.user_roles` (links to `roles` table)
 3. **Role-Permission Mapping** → Defined in `public.role_permissions` table
-4. **Login Hook** → `custom_access_token_hook` injects single `user_role` (text) into JWT claims
-5. **API Requests** → JWT contains `user_role` claim
-6. **RLS Enforcement** → `authorize('permission.name')` checks role_permissions matrix
+4. **Login Hook** → `custom_access_token_hook` injects `user_role` + `user_permissions` array into JWT claims
+5. **API Requests** → JWT contains `user_role` and `user_permissions` claims
+6. **RLS Enforcement** → `authorize('permission.name')` checks role_permissions matrix with fast path via JWT permissions array
 
 ### Default Roles & Permissions
 
@@ -282,12 +392,13 @@ SELECT 'user-uuid-here', id FROM public.roles WHERE name = 'admin';
 **`public.custom_access_token_hook(event jsonb)`**
 - Runs on every login/signup
 - Queries `user_roles` + `roles` to get user's role name
-- Injects `user_role` (text) into JWT claims
+- Pre-fetches permissions array into JWT claims (`user_permissions`)
 - Located in: `supabase/migrations/*_update_hook_and_create_authorize.sql`
 
 **`public.authorize(requested_permission app_permission)`**
 - Centralized permission checker used in ALL RLS policies
-- Joins `role_permissions` + `roles` to verify if user's role has the permission
+- **Fast path**: Checks `user_permissions` array in JWT first (no DB roundtrip)
+- **Fallback**: Database lookup via role_permissions + roles join
 - Returns `true`/`false`
 - Located in: `supabase/migrations/*_update_hook_and_create_authorize.sql`
 
@@ -307,6 +418,9 @@ SELECT 'user-uuid-here', id FROM public.roles WHERE name = 'admin';
 - Validate forms with React Hook Form + Yup
 - Use `cn()` for className composition
 - Export metadata from layout.tsx, not page.tsx
+- Use TanStack Query for server state (caching, mutations)
+- Write unit tests with Vitest for reusable components
+- Run `pnpm build` before committing
 
 ### DON'T
 - Mix UI and data fetching in the same component
@@ -314,3 +428,6 @@ SELECT 'user-uuid-here', id FROM public.roles WHERE name = 'admin';
 - Skip type definitions for props
 - Use `any` type without justification
 - Add console.log in production code
+- Use `getSession()` for authorization (use `getUser()` instead)
+- Modify committed migrations
+- Commit `.env.local` or service role keys
