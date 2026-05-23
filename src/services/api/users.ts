@@ -38,11 +38,12 @@ export async function getUsers(): Promise<{
   const users: UserWithRole[] =
     profiles?.map((profile) => {
       const userRole = userRoles?.find((ur) => ur.user_id === profile.id);
+      const roleName = (userRole?.roles as { name?: string } | null)?.name;
       return {
         id: profile.id,
         email: profile.email || "",
         name: profile.name,
-        role: (userRole?.roles as any)?.name || "user",
+        role: roleName || "user",
         is_active: profile.is_active ?? true,
         created_at: profile.created_at,
       };

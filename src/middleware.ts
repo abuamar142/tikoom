@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -13,41 +13,20 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set({ name, value, ...options });
           });
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: "",
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: "",
-            ...options,
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set({ name, value, ...options });
           });
         },
       },
@@ -55,28 +34,28 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
   // Admin login page: redirect authenticated users to /admin
-  if (pathname === "/admin/login" && session) {
+  if (pathname === "/admin/login" && user) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   // Protect admin routes (except /admin/login)
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !session) {
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !user) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
   // Protect dashboard routes
-  if (pathname.startsWith("/dashboard") && !session) {
+  if (pathname.startsWith("/dashboard") && !user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Redirect authenticated users away from login/register
-  if ((pathname === "/login" || pathname === "/register") && session) {
+  if ((pathname === "/login" || pathname === "/register") && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

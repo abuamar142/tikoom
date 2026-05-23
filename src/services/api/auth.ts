@@ -113,8 +113,7 @@ export async function getUserRole(): Promise<string | null> {
     .eq("user_id", user.id)
     .single();
 
-  // @ts-expect-error - Supabase nested relation typing
-  return userRole?.roles?.name || null;
+  return (userRole?.roles as { name?: string } | undefined)?.name || null;
 }
 
 export async function requireAdmin() {
